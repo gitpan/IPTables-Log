@@ -2,7 +2,7 @@
 
 #=======================================================================
 # Record.pm / IPTables::Log::Set::Record
-# $Id: Record.pm 13 2009-10-15 08:52:18Z andys $
+# $Id: Record.pm 14 2009-10-20 14:08:56Z andys $
 # $HeadURL: https://daedalus.nocarrier.org.uk/svn/IPTables-Log/trunk/IPTables-Log/lib/IPTables/Log/Set/Record.pm $
 # (c)2009 Andy Smith <andy.smith@netprojects.org.uk>
 #-----------------------------------------------------------------------
@@ -64,6 +64,7 @@ use Data::GUID;
 use Data::Dumper;
 # Use NetAddr::IP for IP addresses
 use NetAddr::IP;
+use NetAddr::IP::Util qw(inet_aton);
 
 # Inherit from Class::Accessor, which saves us quite a bit of time.
 use base qw(Class::Accessor);
@@ -72,14 +73,14 @@ __PACKAGE__->follow_best_practice;
 # Make 'text' a read/write accessor method
 __PACKAGE__->mk_accessors( qw(text) );
 # Make the rest read-only
-__PACKAGE__->mk_ro_accessors( qw(log guid date time hostname prefix in out mac src dst proto spt dpt id len ttl df window syn) );
+__PACKAGE__->mk_ro_accessors( qw(log guid date time hostname prefix in out mac src dst proto _spt _dpt spt dpt id len ttl df window syn) );
 
 # Set version information
-our $VERSION = '0.0001';
+our $VERSION = '0.0002';
 
 =head1 CONSTRUCTORS
 
-=head2 Record->create(I<{text => '&lt;iptables/netfilter log message&gt'}>)
+=head2 Record->create(I<{text => '...IN=eth0 OUT=eth1 MAC=00:...'}>)
 
 Creates a new C<IPTables::Log::Set::Record> object. You shouldn't call this directly - see the synopsis for an example.
 
@@ -104,19 +105,17 @@ sub _process_value
 {
 	my ($self, $value, $name) = @_;
 
-	# We want things that are '0', but not things that are blank.
-	if($value ne "")
+	# If $value isn't set, set it to "NONE". A blank string will break IPTables::Log::Set->get_by().
+	if((!$value) || ($value eq ""))
 	{
-		$self->get_log->debug_value($name." is", 'yellow', $value);
-		$self->{$name} = $value;
+		$value = "NONE";
 	}
-	else
-	{
-		$self->get_log->debug_value($name." was", 'red', "not found.");
-	}
+
+	$self->{$name} = $value;
+	return 1;
 }
 
-# As for _process_value, but if true replaces the value with a 1
+# As for _process_value, but if true replaces the value with a 1, otherwise replaces it with a 0
 # Not documented in pod format because this is a private function.
 sub _process_present
 {
@@ -124,13 +123,13 @@ sub _process_present
 
 	if($value)
 	{
-		$self->get_log->debug_value($name." is", 'yellow', $value);
 		$self->{$name} = 1;
 	}
 	else
 	{
-		$self->get_log->debug_value($name." was", 'red', "not found.");
+		$self->{$name} = 0;
 	}
+	return 1;
 }
 
 =head1 METHODS
@@ -155,7 +154,7 @@ sub parse
 		}
 		else
 		{	
-			$self->get_log->error("No log text found?");
+			#$self->get_log->error("No log text found?");
 			return;
 		}
 	}
@@ -164,7 +163,7 @@ sub parse
 		$text = $self->get_text;
 	}
 
-	$self->get_log->debug_value("Original log message is", 'yellow', $text);
+	#$self->get_log->debug_value("Original log message is", 'yellow', $text);
 
 	# First, we pull parts out common to all protocols
 	my ($date, $time, $hostname, $prefix, $in, $out, undef, $mac, $src, $dst, $len, $ttl, $id, $df, $proto)
@@ -174,8 +173,8 @@ sub parse
 	$self->_process_value($proto, 'proto');
 	if(!$proto)
 	{
-		$self->get_log->error("Cannot determine the protocol for this log message!");
-		$self->get_log->error("The log text is ".$self->get_log->fcolour('yellow', $text));
+		#$self->get_log->error("Cannot determine the protocol for this log message!");
+		#$self->get_log->error("The log text is ".$self->get_log->fcolour('yellow', $text));
 		return;
 	}
 
@@ -195,9 +194,19 @@ sub parse
 	# MAC address, if applicable
 	$self->_process_value($mac, 'mac');
 	# Source IP
-	$self->_process_value($src, 'src');
+	$self->_process_value($src, '_src');
+	if($self->{_src})
+	{
+		$self->{_src} = new_from_aton NetAddr::IP::Lite (inet_aton($self->{_src}));
+		$self->{src} = $self->{_src}->addr();
+	}
 	# Destination IP
-	$self->_process_value($dst, 'dst');
+	$self->_process_value($dst, '_dst');
+	if($self->{_dst})
+	{
+		$self->{_dst} = new_from_aton NetAddr::IP::Lite (inet_aton($self->{_dst}));
+		$self->{dst} = $self->{_dst}->addr();
+	}
 	# Packet length
 	$self->_process_value($len, 'len');
 	# TTL
@@ -229,11 +238,105 @@ sub parse
 		}
 	}
 
+	# Return true if we've gotten this far.
+	return 1;
 }
 
 =head2 $record->set_text("...IN=eth0 OUT=eth1 MAC=00:...")
 
 Sets the log message text. Either this must be set, or the text must have been passed to C<create>, otherwise C<parse> will error.
+
+=head1 ACCESSOR METHODS
+
+=head2 get(I<field>)
+
+Returns the value of I<field>. Field can be one of I<guid>, I<date>, I<time>, I<hostname>, I<prefix>, I<in>, I<out>, I<mac>, I<src>, I<dst>, I<proto>, I<spt>, I<dpt>, I<id>, I<len>, I<ttl>, I<df>, I<window>, I<syn>.
+
+=cut
+
+# Get accessor that takes the variable to return as an argument
+sub get
+{
+	my ($self, $value) = @_;
+
+	return $self->{$value};
+}
+
+=head2 get_guid
+
+Returns the GUID for the packet.
+
+=head2 get_date
+
+Returns the date portion of the log message.
+
+=head2 get_time
+
+Returns the time portion of the log message.
+
+=head2 get_hostname
+
+rETURns the hostname portion of the log message.
+
+=head2 get_prefix
+
+Returns the iptables/netfilter log prefix for the log message, i.e. the part specified by C<-j LOG --log-prefix='I<LOG PREFIX> '>.
+
+=head2 get_in
+
+Returns the ingress interface, if specified.
+
+=head2 get_out
+
+Returns the egress interface, if specified.
+
+=head2 get_mac
+
+Returns the MAC address, if specified.
+
+=head2 get_src
+
+Returns the source IP address.
+
+=head2 get_dst
+
+Returns the destination IP address.
+
+=head2 get_proto
+
+Returns the protocol.
+
+=head2 get_spt - TCP and UDP packets only.
+
+Returns the source port, if applicable.
+
+=head2 get_dpt - TCP and UDP packets only.
+
+Returns the destination port, if applicable
+
+=head2 get_id
+
+Returns the packet ID.
+
+=head2 get_len
+
+Returns the packet length.
+
+=head2 get_ttl
+
+Returns the packet's TTL (Time To Live).
+
+=head2 get_df
+
+Returns the packet's DF (Don't Fragment) value.
+
+=head2 get_window - TCP and UDP packets only.
+
+Returns the packet's window size.
+
+=head2 get_sync
+
+Returns 1 if the packet is a SYN, otherwise returns 0.
 
 =head1 CAVEATS
 
@@ -249,7 +352,7 @@ This module was written by B<Andy Smith> <andy.smith@netprojects.org.uk>.
 
 =head1 COPYRIGHT
 
-$Id: Record.pm 13 2009-10-15 08:52:18Z andys $
+$Id: Record.pm 14 2009-10-20 14:08:56Z andys $
 
 (c)2009 Andy Smith (L<http://andys.org.uk/>)
 

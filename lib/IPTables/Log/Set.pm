@@ -2,7 +2,7 @@
 
 #=======================================================================
 # Set.pm / IPTables::Log::Set
-# $Id: Set.pm 13 2009-10-15 08:52:18Z andys $
+# $Id: Set.pm 14 2009-10-20 14:08:56Z andys $
 # $HeadURL: https://daedalus.nocarrier.org.uk/svn/IPTables-Log/trunk/IPTables-Log/lib/IPTables/Log/Set.pm $
 # (c)2009 Andy Smith <andy.smith@netprojects.org.uk>
 #-----------------------------------------------------------------------
@@ -59,10 +59,14 @@ use 5.010000;
 use strict;
 use warnings;
 
+# Use Carp for erroring
+use Carp;
 # Use Data::GUID for generating GUIDs
 use Data::GUID;
 # Use IPTables::Log::Set::Record for individual log entries
 use IPTables::Log::Set::Record;
+# Use Data::Dumper
+use Data::Dumper;
 
 # Inherit from Class::Accessor to simplify accessor method generation
 use base qw(Class::Accessor);
@@ -72,7 +76,7 @@ __PACKAGE__->follow_best_practice;
 __PACKAGE__->mk_ro_accessors( qw(log guid) );
 
 # Set version information
-our $VERSION = '0.0001';
+our $VERSION = '0.0002';
 
 =head1 CONSTRUCTORS
 
@@ -110,7 +114,7 @@ sub create_record
 {
 	my ($self, $args) = @_;
 
-	$args->{log} = $self->get_log;
+	#$args->{log} = $self->get_log;
 
 	my $record = IPTables::Log::Set::Record->create($args);
 
@@ -130,20 +134,22 @@ sub load_file
 	# Check we've been passed a filename
 	if(!$filename)
 	{
-		$self->get_log->fatal("No filename given!");
+		croak "No filename given to load_file().";
+		#$self->get_log->fatal("No filename given!");
 	}
 
 	# Check that the file exists, and barf if not.
 	if(!-f $filename)
 	{
-		$self->get_log->fatal("Cannot find ".$self->get_log->fcolour('yellow', $filename));
+		croak $filename." does not exist.";
+		#$self->get_log->fatal("Cannot find ".$self->get_log->fcolour('yellow', $filename));
 	}
 
-	$self->get_log->debug("Opening ".$self->get_log->fcolour('yellow', $filename)."...");
+	#$self->get_log->debug("Opening ".$self->get_log->fcolour('yellow', $filename)."...");
 	# Open the logfile
 	open(LOGFILE, $filename) || $self->get_log->fatal("Cannot open ".$self->get_log->fcolour('yellow', $filename));
 	my @logs = <LOGFILE>;
-	$self->get_log->debug("Finished reading in logs.");
+	#$self->get_log->debug("Finished reading in logs.");
 
 	# It's a fair bet that if we don't have an IN= and an OUT= and it doesn't have a source of 'kernel', then it's not an iptables log.
 	# We'll discard those before even attempting to parse it.
@@ -152,18 +158,20 @@ sub load_file
 		if($log =~ /kernel.+IN=.+OUT=/)
 		{
 			chomp($log);
-			$self->get_log->debug_nolf("Parsing iptables log entry... ");
+			#$self->get_log->debug_nolf("Parsing iptables log entry... ");
 			my $record = $self->create_record({'text' => $log});
 			$record->parse;
-			$self->get_log->debug("done.");
+			#$self->get_log->debug("done.");
 			$self->add($record);
 			$self->get_log->debug("Added record with GUID ".$self->get_log->fcolour('yellow', $record->get_guid). " to set.");
+			#return 1;
 		}
 		else
 		{
-			$self->get_log->debug("Log entry is not an iptables log entry, so skipping...");
+			#$self->get_log->debug("Log entry is not an iptables log entry, so skipping...");
 		}
 	}
+	return 1;
 }
 
 =head2 $set->add($record)
@@ -184,6 +192,47 @@ sub add
 	}
 }
 
+=head2 $set->get_by('field')
+
+Returns a hash of record identifiers, indexed by I<field>. Field can be one of I<guid>, I<date>, I<time>, I<hostname>, I<prefix>, I<in>, I<out>, I<mac>, I<src>, I<dst>, I<proto>, I<spt>, I<dpt>, I<id>, I<len>, I<ttl>, I<df>, I<window>, I<syn>.
+
+If you attempt to sort on a field that isn't present in all records in the set, get_by will only return records which have that field. For example, if you attempt to get_by('dpt'), any ICMP log messages will be silently excluded from the returned set.
+
+=cut
+
+sub get_by
+{
+	my ($self, $by) = @_;
+
+	# Check that $by is set
+	if($by)
+	{
+		# Create a hash to hold the index values
+		my %indexes;
+		$indexes{by} = $by;
+
+		foreach my $r (keys %{$self->{records}})
+		{
+			# Step through each record.
+			my $record = $self->{records}{$r};
+			my $value = $record->get($by);
+
+			# If $value is blank, it means not all records have this field.
+			# For now, we'll refuse to add these.
+			if($value)
+			{
+				if(!$indexes{$by}{$record->get($by)})
+				{
+					$indexes{$by}{$record->get($by)} = [];
+				}
+				push (@{$indexes{$by}{$record->get($by)}}, $record);
+			}
+		}
+
+		return %indexes;
+	}
+}
+
 =head1 CAVEATS
 
 None.
@@ -198,7 +247,7 @@ This module was written by B<Andy Smith> <andy.smith@netprojects.org.uk>.
 
 =head1 COPYRIGHT
 
-$Id: Set.pm 13 2009-10-15 08:52:18Z andys $
+$Id: Set.pm 14 2009-10-20 14:08:56Z andys $
 
 (c)2009 Andy Smith (L<http://andys.org.uk/>)
 

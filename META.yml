@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name:               IPTables-Log
-version:            0.0001
+version:            0.0002
 abstract:           Parse iptables/netfilter syslog messages.
 author:
     - root <root@>
@@ -10,7 +10,8 @@ configure_requires:
     ExtUtils::MakeMaker:  0
 build_requires:
     ExtUtils::MakeMaker:  0
-requires:  {}
+requires:
+    Data::GUID:  NetAddr::IP
 no_index:
     directory:
         - t
