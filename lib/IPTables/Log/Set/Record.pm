@@ -2,7 +2,7 @@
 
 #=======================================================================
 # Record.pm / IPTables::Log::Set::Record
-# $Id: Record.pm 14 2009-10-20 14:08:56Z andys $
+# $Id: Record.pm 17 2009-12-15 01:36:48Z andys $
 # $HeadURL: https://daedalus.nocarrier.org.uk/svn/IPTables-Log/trunk/IPTables-Log/lib/IPTables/Log/Set/Record.pm $
 # (c)2009 Andy Smith <andy.smith@netprojects.org.uk>
 #-----------------------------------------------------------------------
@@ -76,7 +76,7 @@ __PACKAGE__->mk_accessors( qw(text) );
 __PACKAGE__->mk_ro_accessors( qw(log guid date time hostname prefix in out mac src dst proto _spt _dpt spt dpt id len ttl df window syn) );
 
 # Set version information
-our $VERSION = '0.0002';
+our $VERSION = '0.0003';
 
 =head1 CONSTRUCTORS
 
@@ -95,6 +95,7 @@ sub create
 	# Generate a GUID for the ID
 	my $g = Data::GUID->new;
 	$self->{guid} = $g->as_string;
+	$self->{no_header} = $args->{'no_header'};
 
 	return $self;
 }
@@ -166,8 +167,17 @@ sub parse
 	#$self->get_log->debug_value("Original log message is", 'yellow', $text);
 
 	# First, we pull parts out common to all protocols
-	my ($date, $time, $hostname, $prefix, $in, $out, undef, $mac, $src, $dst, $len, $ttl, $id, $df, $proto)
-		= $text =~ /(.+\s\d+)\s*(\d{2}:\d{2}:\d{2})\s(.+)\skernel:.+\s(.*)\sIN=(\S*)\sOUT=(\S*)\s(MAC=)?(\S+)?\s*SRC=(\d+\.\d+\.\d+\.\d+)\sDST=(\d+\.\d+\.\d+\.\d+)\sLEN=(\d+).+TTL=(\d+).+ID=(\d+)\s(DF)*\s*PROTO=(\S+)/;
+	my ($date, $time, $hostname, $prefix, $in, $out, $mac, $src, $dst, $len, $ttl, $id, $df, $proto);
+	if($self->{'no_header'})
+	{
+		($prefix, $in, $out, undef, $mac, $src, $dst, $len, $ttl, $id, $df, $proto)
+			= $text =~ /kernel:.+\s(.*)\sIN=(\S*)\sOUT=(\S*)\s(MAC=)?(\S+)?\s*SRC=(\d+\.\d+\.\d+\.\d+)\sDST=(\d+\.\d+\.\d+\.\d+)\sLEN=(\d+).+TTL=(\d+).+ID=(\d+)\s(DF)*\s*PROTO=(\S+)/;
+	}
+	else
+	{
+		($date, $time, $hostname, $prefix, $in, $out, undef, $mac, $src, $dst, $len, $ttl, $id, $df, $proto)
+			= $text =~ /(.+\s\d+)\s*(\d{2}:\d{2}:\d{2})\s(.+)\skernel:.+\s(.*)\sIN=(\S*)\sOUT=(\S*)\s(MAC=)?(\S+)?\s*SRC=(\d+\.\d+\.\d+\.\d+)\sDST=(\d+\.\d+\.\d+\.\d+)\sLEN=(\d+).+TTL=(\d+).+ID=(\d+)\s(DF)*\s*PROTO=(\S+)/;
+	}
 
 	# Get the protocol first. Based on this, we know what regex we need next.
 	$self->_process_value($proto, 'proto');
@@ -352,7 +362,7 @@ This module was written by B<Andy Smith> <andy.smith@netprojects.org.uk>.
 
 =head1 COPYRIGHT
 
-$Id: Record.pm 14 2009-10-20 14:08:56Z andys $
+$Id: Record.pm 17 2009-12-15 01:36:48Z andys $
 
 (c)2009 Andy Smith (L<http://andys.org.uk/>)
 

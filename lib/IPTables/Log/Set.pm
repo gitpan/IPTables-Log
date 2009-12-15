@@ -2,7 +2,7 @@
 
 #=======================================================================
 # Set.pm / IPTables::Log::Set
-# $Id: Set.pm 14 2009-10-20 14:08:56Z andys $
+# $Id: Set.pm 17 2009-12-15 01:36:48Z andys $
 # $HeadURL: https://daedalus.nocarrier.org.uk/svn/IPTables-Log/trunk/IPTables-Log/lib/IPTables/Log/Set.pm $
 # (c)2009 Andy Smith <andy.smith@netprojects.org.uk>
 #-----------------------------------------------------------------------
@@ -76,7 +76,7 @@ __PACKAGE__->follow_best_practice;
 __PACKAGE__->mk_ro_accessors( qw(log guid) );
 
 # Set version information
-our $VERSION = '0.0002';
+our $VERSION = '0.0003';
 
 =head1 CONSTRUCTORS
 
@@ -96,6 +96,7 @@ sub create
 	# Generate a GUID for the set
 	my $g = Data::GUID->new;
 	$self->{guid} = $g->as_string;
+	$self->{no_header} = $args->{'no_header'};
 
 	return $self;
 }
@@ -159,7 +160,7 @@ sub load_file
 		{
 			chomp($log);
 			#$self->get_log->debug_nolf("Parsing iptables log entry... ");
-			my $record = $self->create_record({'text' => $log});
+			my $record = $self->create_record({'text' => $log, 'no_header' => $self->{no_header}});
 			$record->parse;
 			#$self->get_log->debug("done.");
 			$self->add($record);
@@ -247,7 +248,7 @@ This module was written by B<Andy Smith> <andy.smith@netprojects.org.uk>.
 
 =head1 COPYRIGHT
 
-$Id: Set.pm 14 2009-10-20 14:08:56Z andys $
+$Id: Set.pm 17 2009-12-15 01:36:48Z andys $
 
 (c)2009 Andy Smith (L<http://andys.org.uk/>)
 

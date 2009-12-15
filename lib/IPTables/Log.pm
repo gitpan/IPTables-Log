@@ -2,7 +2,7 @@
 
 #=======================================================================
 # Log.pm / IPTables::Log
-# $Id: Log.pm 14 2009-10-20 14:08:56Z andys $
+# $Id: Log.pm 17 2009-12-15 01:36:48Z andys $
 # $HeadURL: https://daedalus.nocarrier.org.uk/svn/IPTables-Log/trunk/IPTables-Log/lib/IPTables/Log.pm $
 # (c)2009 Andy Smith <andy.smith@netprojects.org.uk>
 #-----------------------------------------------------------------------
@@ -73,7 +73,7 @@ __PACKAGE__->mk_accessors( qw(raw debug) );
 
 # Set version information
 our $VERSION;
-$VERSION = "0.0002";
+$VERSION = "0.0003";
 
 # Hashes of colour
 my $clr = "[0m";
@@ -154,9 +154,11 @@ Creates a new C<IPTables::Log> object.
 
 =head1 METHODS
 
-=head2 $log->create_set
+=head2 $log->create_set(I<no_header => 0|1>)
 
 Creates a new C<IPTables::Log::Set> object.
+
+Setting I<no_header> to B<1> makes L<IPTables::Log::Set::Record> assume that the timestamp and hostname at the beginning of the message is missing (for example, if it's already been processed by another utility).
 
 See L<IPTables::Log::Set> and L<IPTables::Log::Set::Record> for further details.
 
@@ -164,9 +166,11 @@ See L<IPTables::Log::Set> and L<IPTables::Log::Set::Record> for further details.
 
 sub create_set
 {
-	my ($self) = @_;
+	my ($self, $args) = @_;
 
-	my $set = IPTables::Log::Set->create({'log' => $self});
+	$args->{'log'} = $self;
+
+	my $set = IPTables::Log::Set->create($args);
 
 	return $set;
 }
@@ -185,7 +189,7 @@ This module was written by B<Andy Smith> <andy.smith@netprojects.org.uk>.
 
 =head1 COPYRIGHT
 
-$Id: Log.pm 14 2009-10-20 14:08:56Z andys $
+$Id: Log.pm 17 2009-12-15 01:36:48Z andys $
 
 (c)2009 Andy Smith (L<http://andys.org.uk/>)
 
