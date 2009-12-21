@@ -34,7 +34,6 @@ $r->set_text($tcp);
 
 # Check what comes out is what went in...
 ok($r->get_text eq $tcp,									"TCP: does get_text() match log entry?");
-
 # Parse
 ok($r->parse,												"TCP: parse()");
 

@@ -1,5 +1,10 @@
 Revision history for Perl extension IPTables::Log.
 
+0.0004  Mon Dec 21 01:27:00 2009
+	- Added ICMP type support.
+	- Added 'parsed' accessor to IPTables::Log::Set::Record to get parse status.
+	- Removed erroneous character in regex in Record.pm (make test now works).
+
 0.0003  Tue Dec 15 01:31:00 2009
 	- Fixed further dependency on NetAddr::IP.
 	- Added 'no_header' option to IPTables::Log::Set::Record.

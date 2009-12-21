@@ -73,7 +73,7 @@ __PACKAGE__->mk_accessors( qw(raw debug) );
 
 # Set version information
 our $VERSION;
-$VERSION = "0.0003";
+$VERSION = "0.0004";
 
 # Hashes of colour
 my $clr = "[0m";

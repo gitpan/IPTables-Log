@@ -2,7 +2,7 @@
 
 #=======================================================================
 # Record.pm / IPTables::Log::Set::Record
-# $Id: Record.pm 17 2009-12-15 01:36:48Z andys $
+# $Id: Record.pm 18 2009-12-16 00:05:52Z andys $
 # $HeadURL: https://daedalus.nocarrier.org.uk/svn/IPTables-Log/trunk/IPTables-Log/lib/IPTables/Log/Set/Record.pm $
 # (c)2009 Andy Smith <andy.smith@netprojects.org.uk>
 #-----------------------------------------------------------------------
@@ -71,12 +71,12 @@ use base qw(Class::Accessor);
 # Follow best practice
 __PACKAGE__->follow_best_practice;
 # Make 'text' a read/write accessor method
-__PACKAGE__->mk_accessors( qw(text) );
+__PACKAGE__->mk_accessors( qw(text parsed) );
 # Make the rest read-only
-__PACKAGE__->mk_ro_accessors( qw(log guid date time hostname prefix in out mac src dst proto _spt _dpt spt dpt id len ttl df window syn) );
+__PACKAGE__->mk_ro_accessors( qw(log guid date time hostname prefix in out mac src dst proto _spt _dpt spt dpt id len ttl df window syn type code) );
 
 # Set version information
-our $VERSION = '0.0003';
+our $VERSION = '0.0004';
 
 =head1 CONSTRUCTORS
 
@@ -95,7 +95,8 @@ sub create
 	# Generate a GUID for the ID
 	my $g = Data::GUID->new;
 	$self->{guid} = $g->as_string;
-	$self->{no_header} = $args->{'no_header'};
+	$self->{no_header} = $args->{'no_header'} ? $args->{'no_header'} : 0;
+	$self->{parsed} = 0;
 
 	return $self;
 }
@@ -168,15 +169,15 @@ sub parse
 
 	# First, we pull parts out common to all protocols
 	my ($date, $time, $hostname, $prefix, $in, $out, $mac, $src, $dst, $len, $ttl, $id, $df, $proto);
-	if($self->{'no_header'})
+	if($self->{'no_header'} eq 1)
 	{
-		($prefix, $in, $out, undef, $mac, $src, $dst, $len, $ttl, $id, $df, $proto)
-			= $text =~ /kernel:.+\s(.*)\sIN=(\S*)\sOUT=(\S*)\s(MAC=)?(\S+)?\s*SRC=(\d+\.\d+\.\d+\.\d+)\sDST=(\d+\.\d+\.\d+\.\d+)\sLEN=(\d+).+TTL=(\d+).+ID=(\d+)\s(DF)*\s*PROTO=(\S+)/;
+		(undef, $prefix, $in, $out, undef, $mac, $src, $dst, $len, $ttl, $id, $df, $proto)
+			= $text =~ /kernel:(\s\[\d+\.\d+\])?\s(\S*)\sIN=(\S*)\sOUT=(\S*)\s(MAC=)?(\S+)?\s*SRC=(\d+\.\d+\.\d+\.\d+|\S+)\sDST=(\d+\.\d+\.\d+\.\d+|\S+)\sLEN=(\d+).+TTL=(\d+).+ID=(\d+)\s(DF)*\s*PROTO=(\S+)/;
 	}
 	else
 	{
-		($date, $time, $hostname, $prefix, $in, $out, undef, $mac, $src, $dst, $len, $ttl, $id, $df, $proto)
-			= $text =~ /(.+\s\d+)\s*(\d{2}:\d{2}:\d{2})\s(.+)\skernel:.+\s(.*)\sIN=(\S*)\sOUT=(\S*)\s(MAC=)?(\S+)?\s*SRC=(\d+\.\d+\.\d+\.\d+)\sDST=(\d+\.\d+\.\d+\.\d+)\sLEN=(\d+).+TTL=(\d+).+ID=(\d+)\s(DF)*\s*PROTO=(\S+)/;
+		($date, $time, $hostname, undef, $prefix, $in, $out, undef, $mac, $src, $dst, $len, $ttl, $id, $df, $proto)
+			= $text =~ /(\w{3}\s\d{1,2})\s{1,2}(\d{2}:\d{2}:\d{2})\s(.+)\skernel:(\s\[\d+\.\d+\])?\s(\S*)\sIN=(\S*)\sOUT=(\S*)\s(MAC=)?(\S+)?\s*SRC=(\d+\.\d+\.\d+\.\d+|\S+)\sDST=(\d+\.\d+\.\d+\.\d+|\S+)\sLEN=(\d+).+TTL=(\d+).+ID=(\d+)\s(DF)*\s*PROTO=(\S+)/;
 	}
 
 	# Get the protocol first. Based on this, we know what regex we need next.
@@ -247,8 +248,17 @@ sub parse
 			$self->_process_present($syn, 'syn');
 		}
 	}
+	elsif($proto eq "ICMP")
+	{
+		my ($type) = $text =~ /ICMP TYPE=(\d+)\sCODE=(\d+)/;
+
+		# ICMP Type
+		$self->_process_value($type, 'type');
+		$self->_process_value($type, 'code');
+	}
 
 	# Return true if we've gotten this far.
+	$self->set_parsed(1);
 	return 1;
 }
 
@@ -348,6 +358,10 @@ Returns the packet's window size.
 
 Returns 1 if the packet is a SYN, otherwise returns 0.
 
+=head2 get_parsed
+
+Returns 1 if the packet has been successfully parsed, otherwise returns 0.
+
 =head1 CAVEATS
 
 It parses log entries. It doesn't do much else, yet.
@@ -362,7 +376,7 @@ This module was written by B<Andy Smith> <andy.smith@netprojects.org.uk>.
 
 =head1 COPYRIGHT
 
-$Id: Record.pm 17 2009-12-15 01:36:48Z andys $
+$Id: Record.pm 18 2009-12-16 00:05:52Z andys $
 
 (c)2009 Andy Smith (L<http://andys.org.uk/>)
 

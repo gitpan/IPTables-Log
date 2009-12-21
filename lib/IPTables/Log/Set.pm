@@ -76,7 +76,7 @@ __PACKAGE__->follow_best_practice;
 __PACKAGE__->mk_ro_accessors( qw(log guid) );
 
 # Set version information
-our $VERSION = '0.0003';
+our $VERSION = '0.0004';
 
 =head1 CONSTRUCTORS
 

@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name:               IPTables-Log
-version:            0.0003
+version:            0.0004
 abstract:           Parse iptables/netfilter syslog messages.
 author:
     - Andy Smith <ams@meh.org.uk>
