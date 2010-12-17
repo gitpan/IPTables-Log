@@ -2,8 +2,8 @@
 
 #=======================================================================
 # Set.pm / IPTables::Log::Set
-# $Id: Set.pm 17 2009-12-15 01:36:48Z andys $
-# $HeadURL: https://daedalus.nocarrier.org.uk/svn/IPTables-Log/trunk/IPTables-Log/lib/IPTables/Log/Set.pm $
+# $Id: Set.pm 21 2010-12-17 21:07:37Z andys $
+# $HeadURL: https://daedalus.dmz.dn7.org.uk/svn/IPTables-Log/trunk/IPTables-Log/lib/IPTables/Log/Set.pm $
 # (c)2009 Andy Smith <andy.smith@netprojects.org.uk>
 #-----------------------------------------------------------------------
 #:Description
@@ -76,7 +76,7 @@ __PACKAGE__->follow_best_practice;
 __PACKAGE__->mk_ro_accessors( qw(log guid) );
 
 # Set version information
-our $VERSION = '0.0004';
+our $VERSION = '0.0005';
 
 =head1 CONSTRUCTORS
 
@@ -248,7 +248,7 @@ This module was written by B<Andy Smith> <andy.smith@netprojects.org.uk>.
 
 =head1 COPYRIGHT
 
-$Id: Set.pm 17 2009-12-15 01:36:48Z andys $
+$Id: Set.pm 21 2010-12-17 21:07:37Z andys $
 
 (c)2009 Andy Smith (L<http://andys.org.uk/>)
 

@@ -2,8 +2,8 @@
 
 #=======================================================================
 # Log.pm / IPTables::Log
-# $Id: Log.pm 17 2009-12-15 01:36:48Z andys $
-# $HeadURL: https://daedalus.nocarrier.org.uk/svn/IPTables-Log/trunk/IPTables-Log/lib/IPTables/Log.pm $
+# $Id: Log.pm 21 2010-12-17 21:07:37Z andys $
+# $HeadURL: https://daedalus.dmz.dn7.org.uk/svn/IPTables-Log/trunk/IPTables-Log/lib/IPTables/Log.pm $
 # (c)2009 Andy Smith <andy.smith@netprojects.org.uk>
 #-----------------------------------------------------------------------
 #:Description
@@ -73,7 +73,7 @@ __PACKAGE__->mk_accessors( qw(raw debug) );
 
 # Set version information
 our $VERSION;
-$VERSION = "0.0004";
+$VERSION = "0.0005";
 
 # Hashes of colour
 my $clr = "[0m";
@@ -189,7 +189,7 @@ This module was written by B<Andy Smith> <andy.smith@netprojects.org.uk>.
 
 =head1 COPYRIGHT
 
-$Id: Log.pm 17 2009-12-15 01:36:48Z andys $
+$Id: Log.pm 21 2010-12-17 21:07:37Z andys $
 
 (c)2009 Andy Smith (L<http://andys.org.uk/>)
 

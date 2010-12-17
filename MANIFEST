@@ -8,4 +8,4 @@ README
 t/00-IPTables-Log.t
 t/01-IPTables-Log-Set.t
 t/02-IPTables-Log-Set-Record.t
-META.yml                                 Module meta-data (added by MakeMaker)
+example-data/syslog

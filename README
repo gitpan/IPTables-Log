@@ -1,4 +1,4 @@
-IPTables-Log version 0.0004
+IPTables-Log version 0.0005
 ===========================
 
 IPTables::Log provides methods for parsing and working with
@@ -19,6 +19,7 @@ This module requires these other modules and libraries:
 
 	Carp
 	NetAddr::IP
+	Class::Accessor
 	Data::GUID
 
 COPYRIGHT AND LICENCE

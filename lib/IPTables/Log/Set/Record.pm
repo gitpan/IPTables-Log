@@ -2,8 +2,8 @@
 
 #=======================================================================
 # Record.pm / IPTables::Log::Set::Record
-# $Id: Record.pm 18 2009-12-16 00:05:52Z andys $
-# $HeadURL: https://daedalus.nocarrier.org.uk/svn/IPTables-Log/trunk/IPTables-Log/lib/IPTables/Log/Set/Record.pm $
+# $Id: Record.pm 21 2010-12-17 21:07:37Z andys $
+# $HeadURL: https://daedalus.dmz.dn7.org.uk/svn/IPTables-Log/trunk/IPTables-Log/lib/IPTables/Log/Set/Record.pm $
 # (c)2009 Andy Smith <andy.smith@netprojects.org.uk>
 #-----------------------------------------------------------------------
 #:Description
@@ -76,7 +76,7 @@ __PACKAGE__->mk_accessors( qw(text parsed) );
 __PACKAGE__->mk_ro_accessors( qw(log guid date time hostname prefix in out mac src dst proto _spt _dpt spt dpt id len ttl df window syn type code) );
 
 # Set version information
-our $VERSION = '0.0004';
+our $VERSION = '0.0005';
 
 =head1 CONSTRUCTORS
 
@@ -376,7 +376,7 @@ This module was written by B<Andy Smith> <andy.smith@netprojects.org.uk>.
 
 =head1 COPYRIGHT
 
-$Id: Record.pm 18 2009-12-16 00:05:52Z andys $
+$Id: Record.pm 21 2010-12-17 21:07:37Z andys $
 
 (c)2009 Andy Smith (L<http://andys.org.uk/>)
 
